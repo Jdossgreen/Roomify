@@ -16,7 +16,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const [projects, setprojects] = useState<DesignItem[]>([])
+  const [projects, setProjects] = useState<DesignItem[]>([])
 
   const handleUploadComplete = async (base64Image: string) => {
     const newId = Date.now().toString();
@@ -35,12 +35,12 @@ export default function Home() {
       return false;
     }
 
-  setprojects((prev) => [newItem, ...prev]);
+  setProjects((prev) => [saved, ...prev]);
 
     navigate(`/visualizer/${newId}`, {
       state: {
         initialImage: saved.sourceImage,
-        initialRendered: saved.renderedImage || null,
+        initialRender: saved.renderedImage || null,
         name
       }
     });
@@ -107,8 +107,8 @@ export default function Home() {
         </div>
 
         <div className="projects-grid">
-          {projects.map(({id, name, renderedImage, sourceImage, timestamp}) => (
-            <div className="project-card group">
++          {projects.map(({id, name, renderedImage, sourceImage, timestamp}) => (
++            <div key={id} className="project-card group">
             <div className="preview">
               <img src={renderedImage || sourceImage} alt="Project" />
 

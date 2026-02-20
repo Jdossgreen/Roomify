@@ -7,7 +7,8 @@ type HostedAsset = { url: string };
 export const getOrCreateHostingConfig = async (): Promise<HostingConfig | null> => {
     const existing = (await puter.kv.get(HOSTING_CONFIG_KEY)) as HostingConfig | null;
 
-    if (existing?.subdomain) { subdomain: existing.subdomain };
+    
+    if (existing?.subdomain) return existing;
 
     const newSubdomain = createHostingSlug();
 
@@ -15,6 +16,8 @@ export const getOrCreateHostingConfig = async (): Promise<HostingConfig | null> 
         const created = await puter.hosting.create(newSubdomain, '.');
 
         const record = {subdomain: created.subdomain };
+
+        await puter.kv.set(HOSTING_CONFIG_KEY, record);
 
         return record;
     } catch(e) {

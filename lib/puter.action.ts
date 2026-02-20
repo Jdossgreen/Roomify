@@ -1,6 +1,6 @@
 import puter from "@heyputer/puter.js";
 import { getOrCreateHostingConfig, uploadImageToHosting } from "./puter.hosting";
-import { isHostedUrl } from "./utils";
+import { isHostedUrl} from "./utils";
 
 export const signIn = async () => await puter.auth.signIn();
 
@@ -12,7 +12,18 @@ export const getCurrentUser = async () => {
     } catch {
         return null;
     }
-}
+};
+
+const PROJECT_KV_PREFIX = "roomify_project:";
+
+export const getProjectById = async (id: string): Promise<DesignItem | null> => {
+    try {
+        const stored = await puter.kv.get(`${PROJECT_KV_PREFIX}${id}`) as DesignItem | null | undefined;
+        return stored && typeof stored === "object" && typeof stored.sourceImage === "string" ? stored : null;
+    } catch {
+        return null;
+    }
+};
 
 export const createProject = async ({ item}: CreateProjectParams): Promise<DesignItem | null | undefined> => {
     const projectId = item.id;
@@ -25,41 +36,37 @@ export const createProject = async ({ item}: CreateProjectParams): Promise<Desig
     const hostedRender = projectId && item.renderedImage ? 
         await uploadImageToHosting({ hosting, url: item.renderedImage, projectId, label: "rendered" }): null;
 
-    const resolvedSource = hostedSource?.url || (isHostedUrl(item.sourceImage) ? item.sourceImage
-    : ''
-);
+    const resolvedSource = hostedSource?.url || (isHostedUrl(item.sourceImage) ? item.sourceImage : '');
 
-if(!resolvedSource) {
-    console.warn('Failed to host source image, skipping save.')
-    return null;
-}
+    if (!resolvedSource) {
+        console.warn('Failed to host source image, skipping save.');
+        return null;
+    }
 
-const resolvedRender = hostedRender?.url
-    ? hostedRender?.url
-    : item.renderedImage && isHostedUrl(item.renderedImage)
-        ? item.renderedImage
-        : undefined;
+    const resolvedRender = hostedRender?.url
+        ? hostedRender?.url
+        : item.renderedImage && isHostedUrl(item.renderedImage)
+            ? item.renderedImage
+            : undefined;
 
-const {
-    sourcePath: _sourcePath,
-    renderedPath: _renderedPath,
-    publicPath: _publicPath,
-    ...rest
-} = item;
+    const {
+        sourcePath: _sourcePath,
+        renderedPath: _renderedPath,
+        publicPath: _publicPath,
+        ...rest
+    } = item;
 
-const payload = {
-    ...rest,
-    sourceImage: resolvedSource,
-    renderedImage: resolvedRender,
-}
+    const payload = {
+        ...rest,
+        sourceImage: resolvedSource,
+        renderedImage: resolvedRender,
+    };
 
-try {
-    //Call the puter worker to store project in kv
-
-    return payload;
-} catch(e) {
-    console.log('Failed to save project!', e);
-    return null;
-}
-
+    try {
+        // Call the puter worker to store project in kv
+        return payload;
+    } catch (e) {
+        console.log('Failed to save project!', e);
+        return null;
+    }
 }
