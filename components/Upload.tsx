@@ -1,7 +1,7 @@
 import { CheckCircleIcon, ImageIcon, UploadIcon } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router';
-import { PROGRESS_INTERVAL_MS, PROGRESS_STEP, REDIRECT_DELAY_MS } from '../lib/Constants';
+import { MAX_UPLOAD_SIZE, PROGRESS_INTERVAL_MS, PROGRESS_STEP, REDIRECT_DELAY_MS } from '../lib/Constants';
 
 type UploadProps = {
   onComplete?: (base64: string) => void;
@@ -11,23 +11,42 @@ const Upload = ({ onComplete }: UploadProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [sizeError, setSizeError] = useState<string | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { isSignedIn } = useOutletContext<AuthContext>();
 
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current !== null) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   const processFile = (files: FileList | File[]) => {
     if (!isSignedIn) return;
-    const first = Array.isArray(files) ? files[0] : files[0];
+    const first = files[0];
     if (!first) return;
+    if (first.size > MAX_UPLOAD_SIZE) {
+      setSizeError(`File is too large. Maximum size is ${MAX_UPLOAD_SIZE / (1024 * 1024)}MB.`);
+      return;
+    }
+    setSizeError(null);
     setFile(first);
     setProgress(0);
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
-      const interval = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         setProgress((prev) => {
           const next = Math.min(100, prev + PROGRESS_STEP);
           if (next === 100) {
-            clearInterval(interval);
+            if (progressIntervalRef.current !== null) {
+              clearInterval(progressIntervalRef.current);
+              progressIntervalRef.current = null;
+            }
             setTimeout(() => onComplete?.(base64), REDIRECT_DELAY_MS);
           }
           return next;
@@ -41,6 +60,7 @@ const Upload = ({ onComplete }: UploadProps) => {
     if (!isSignedIn) return;
     const files = e.target.files;
     if (files?.length) processFile(files);
+    e.target.value = '';
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
@@ -91,7 +111,8 @@ const Upload = ({ onComplete }: UploadProps) => {
               <UploadIcon size={20} />
             </div>
             <p>{isSignedIn ? 'Click to upload or drag & drop' : 'Sign in to upload your floor plan'}</p>
-            <p className='help'>Max file size: 50MB</p>
+            <p className='help'>Max file size: {MAX_UPLOAD_SIZE / (1024 * 1024)}MB</p>
+            {sizeError && <p className='help error' role='alert'>{sizeError}</p>}
           </div>
         </div>
       ) : (

@@ -1,4 +1,8 @@
-export const PUTER_WORKER_URL = import.meta.env.VITE_PUTER_WORKER_URL || "";
+const _raw = import.meta.env.VITE_PUTER_WORKER_URL;
+if (typeof _raw !== "string" || !_raw.trim()) {
+  console.warn("[Constants] VITE_PUTER_WORKER_URL is missing or empty; Puter worker features may fail.");
+}
+export const PUTER_WORKER_URL = typeof _raw === "string" ? _raw.trim() : "";
 
 // Storage Paths
 export const STORAGE_PATHS = {
@@ -7,9 +11,11 @@ export const STORAGE_PATHS = {
     RENDERS: "roomify/renders",
 } as const;
 
+// Upload limit (bytes); 50MB
+export const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
+
 // Timing Constants (in milliseconds)
 export const SHARE_STATUS_RESET_DELAY_MS = 1500;
-export const PROGRESS_INCREMENT = 15;
 export const REDIRECT_DELAY_MS = 600;
 export const PROGRESS_INTERVAL_MS = 100;
 export const PROGRESS_STEP = 5;
