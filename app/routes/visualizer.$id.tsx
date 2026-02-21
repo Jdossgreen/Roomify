@@ -1,6 +1,6 @@
 import { useNavigate, useOutletContext, useParams} from "react-router";
 import {useEffect, useRef, useState} from "react";
-//import {generate3DView} from "../../lib/ai.action";
+import {generate3DView} from "../../lib/ai.action";
 import {Box, Download, RefreshCcw, Share2, X} from "lucide-react";
 import Button from "../../components/ui/Button";
 import {createProject, getProjectById} from "../../lib/puter.action";
@@ -135,7 +135,7 @@ const VisualizerId = () => {
                         <div className="panel-actions">
                             <Button
                                 size="sm"
-                                onClick={handleExport}
+                                onClick={() => {}}
                                 className="export"
                                 disabled={!currentImage}
                             >
